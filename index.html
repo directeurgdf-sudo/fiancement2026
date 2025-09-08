@@ -5,72 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Simulateur – Projet 2026 (% unique)</title>
   <meta name="description" content="Simulateur de contribution 2026 (taux unique) – Gîtes de France" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23145a32'/><text x='50' y='60' text-anchor='middle' font-size='54' fill='white'>%</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Polices système pour rester léger */
-    html { color-scheme: light; }
-    body { font-feature-settings: 'cv02','cv03','cv04','cv11'; }
-    .card { border: 1px solid rgb(226 232 240); border-radius: 1rem; background: white; }
-    .btn { border-radius: 0.75rem; padding: 0.6rem 0.9rem; border: 1px solid rgb(226 232 240); background: white; }
-    .btn:hover { background: rgb(247 250 252); }
-    .badge { border-radius: 0.5rem; padding: 0.35rem 0.6rem; font-size: 0.875rem; border: 1px solid rgb(226 232 240); }
-  </style>
-  <!-- React + ReactDOM UMD -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <!-- Framer Motion UMD -->
   <script src="https://unpkg.com/framer-motion/dist/framer-motion.umd.js"></script>
+  <style>
+    .card { border: 1px solid #e2e8f0; border-radius: 1rem; background: white; }
+    .btn { border-radius: 0.75rem; padding: 0.6rem 0.9rem; border: 1px solid #e2e8f0; background: white; }
+    .btn:hover { background: #f7fafc; }
+  </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-sky-50">
-  <div id="root" class="p-6 md:p-10"></div>
+  <div id="root" class="p-6 md:p-10">Chargement…</div>
 
   <script type="text/javascript">
+    const DEPT_CODES = ["01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","21","22","23","24","25","26","27","28","29","30","31","32","33","34","35","36","37","38","39","40","41","42","43","44","45","46","47","48","49","50","51","52","53","54","55","56","57","58","59","60","61","62","63","64","65","66","67","68","69","70","71","72","73","74","75","76","77","78","79","80","81","82","83","84","85","86","87","88","89","90","91","92","93","94","95","2A","2B","971","972","973","974","976"];
+
     const { useState, useMemo, useEffect } = React;
-    const { motion, AnimatePresence } = window['framer-motion'];
-
-    const DEFAULT_RATE = 0.02; // 2 %
-
+    const DEFAULT_RATE = 0.02;
     const fmt = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
     const fmtPrecise = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
-
-    function InfoIcon(props){ return React.createElement('svg', { ...props, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:'1.5' },
-      React.createElement('circle',{cx:'12', cy:'12', r:'9'}),
-      React.createElement('path',{d:'M12 8.5h.01'}),
-      React.createElement('path',{d:'M10.5 12h3v4'})
-    ); }
-
-    function PercentIcon(props){ return React.createElement('svg', { ...props, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:'1.5' },
-      React.createElement('path',{d:'M19 5L5 19'}),
-      React.createElement('circle',{cx:'7.5', cy:'7.5', r:'2.5'}),
-      React.createElement('circle',{cx:'16.5', cy:'16.5', r:'2.5'})
-    ); }
-
-    function CoinIcon(props){ return React.createElement('svg', { ...props, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:'1.5' },
-      React.createElement('ellipse',{cx:'12', cy:'6', rx:'8', ry:'3'}),
-      React.createElement('path',{d:'M4 6v6c0 1.66 3.58 3 8 3s8-1.34 8-3V6'}),
-      React.createElement('path',{d:'M4 12v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6'})
-    ); }
-
-    function SparklesIcon(props){ return React.createElement('svg', { ...props, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:'1.5' },
-      React.createElement('path',{d:'M12 3l1.8 3.9L18 9l-4.2 2.1L12 15l-1.8-3.9L6 9l4.2-2.1L12 3z'}),
-      React.createElement('path',{d:'M5 17l1 2l2 1l-2 1l-1 2l-1-2l-2-1l2-1l1-2z'}),
-      React.createElement('path',{d:'M18 17l.8 1.6L21 19l-2.2 1.1L18 22l-.8-1.9L15 19l2.2-.4L18 17z'})
-    ); }
 
     function App(){
       const [dept, setDept] = useState('');
       const [loyerStr, setLoyerStr] = useState('');
       const [rate, setRate] = useState(DEFAULT_RATE);
       const [displayed, setDisplayed] = useState(0);
-      const [codes, setCodes] = useState([]);
-
-      useEffect(() => {
-        fetch('./public/departements_codes.json').then(r => r.json()).then(setCodes).catch(()=>{});
-      }, []);
 
       const loyer = useMemo(() => {
-        const raw = (loyerStr || '').replace(/\s/g, '').replace(/,/, '.');
+        const raw = (loyerStr || '').replace(/\\s/g, '').replace(/,/, '.');
         const val = Number(raw);
         return Number.isFinite(val) ? Math.max(0, val) : 0;
       }, [loyerStr]);
@@ -96,96 +59,16 @@
       const valid = dept.trim().length > 0 && loyer > 0;
 
       return React.createElement('div', {className:'mx-auto max-w-5xl'}, [
-        React.createElement(motion.h1, {key:'h', initial:{opacity:0,y:8}, animate:{opacity:1,y:0}, transition:{duration:0.5}, className:'text-3xl md:text-4xl font-semibold tracking-tight text-slate-800 flex items-center gap-2'},
-          [React.createElement(SparklesIcon,{key:'i',className:'h-7 w-7'}),'Simulateur « Projet 2026 – % unique »']
-        ),
-        React.createElement('p',{key:'p',className:'mt-2 text-slate-600 max-w-3xl'}, 
-          ['Indiquez votre ', React.createElement('strong',{key:'s1'},'code département'),' et votre ', React.createElement('strong',{key:'s2'},'loyer propriétaire 2025 (HT)'),'. ',
-          'Le simulateur calcule la contribution 2026 au taux unique (par défaut 2%).']
-        ),
-        React.createElement('div',{key:'grid',className:'grid md:grid-cols-5 gap-4 mt-6'},[
-          React.createElement('div',{key:'left',className:'md:col-span-3 card shadow-sm p-5 md:p-6'},[
-            React.createElement('div',{key:'form',className:'grid sm:grid-cols-3 gap-4 items-end'},[
-              React.createElement('div',{key:'dept',className:'sm:col-span-1'},[
-                React.createElement('label',{className:'text-sm text-slate-600'},'Code département'),
-                React.createElement('div',{className:'flex gap-2 mt-1'},[
-                  React.createElement('input',{
-                    key:'deptInput', placeholder:'ex. 21, 2A, 971…', value:dept,
-                    onChange:(e)=>setDept(e.target.value.trim()),
-                    className:'text-base w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300'
-                  }),
-                  React.createElement('select',{
-                    key:'deptSelect', className:'rounded-xl border border-slate-200 px-2 py-2',
-                    onChange:(e)=>setDept(e.target.value)
-                  },[React.createElement('option',{key:'ph',value:''},'Liste'), ...codes.map(c=>React.createElement('option',{key:c,value:c},c))])
-                ])
-              ]),
-              React.createElement('div',{key:'loyer',className:'sm:col-span-2'},[
-                React.createElement('label',{className:'text-sm text-slate-600'},'Loyer propriétaire 2025 (HT)'),
-                React.createElement('div',{className:'mt-1 flex gap-2'},[
-                  React.createElement('input',{
-                    key:'loyerInput', inputMode:'decimal', placeholder:'ex. 12 000', value:loyerStr,
-                    onChange:(e)=>setLoyerStr(e.target.value),
-                    className:'text-base w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300'
-                  }),
-                  React.createElement('button',{key:'clear',className:'btn',onClick:()=>setLoyerStr('')},'Effacer')
-                ]),
-                React.createElement('div',{className:'mt-2 text-xs text-slate-500'},'Astuce : vous pouvez utiliser des espaces et des virgules. Exemple : 12 345,67')
-              ])
-            ]),
-            valid && React.createElement(AnimatePresence,{key:'ap'},[
-              React.createElement(motion.div,{key:'res', initial:{opacity:0,y:8}, animate:{opacity:1,y:0}, exit:{opacity:0,y:8}, transition:{duration:0.35}, className:'mt-6'},[
-                React.createElement('div',{className:'card border-emerald-100/60 bg-white/70 backdrop-blur p-6'},[
-                  React.createElement('div',{className:'flex flex-col md:flex-row md:items-center md:justify-between gap-4'},[
-                    React.createElement('div',{key:'left'},[
-                      React.createElement('div',{className:'text-xs uppercase tracking-wide text-slate-500'},'Contribution 2026 (taux unique)'),
-                      React.createElement('div',{className:'text-3xl md:text-4xl font-semibold text-slate-800 mt-1'}, fmt.format(Math.round(displayed))),
-                      React.createElement('div',{className:'text-sm text-slate-600 mt-1'}, `Calcul : ${fmtPrecise.format(loyer)} × ${(rate*100).toFixed(2)}%`)
-                    ]),
-                    React.createElement('div',{className:'flex gap-2 items-center'},[
-                      React.createElement('span',{className:'badge flex items-center gap-1'},[React.createElement(PercentIcon,{className:'h-4 w-4'}), `Taux ${(rate*100).toFixed(2)}%`]),
-                      React.createElement('span',{className:'badge bg-emerald-600 text-white border-emerald-600 flex items-center gap-1'},[React.createElement(CoinIcon,{className:'h-4 w-4'}), `Base ${fmt.format(Math.round(loyer))}`])
-                    ])
-                  ])
-                ])
-              ])
-            ]),
-            React.createElement('div',{className:'mt-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm flex gap-2'},[
-              React.createElement(InfoIcon,{className:'h-5 w-5 mt-0.5'}),
-              React.createElement('div',null,`Le taux par défaut (2%) provient du scénario « % unique ». Ajustez-le ci‑dessous pour tester des variantes.`)
-            ]),
-            React.createElement('div',{className:'mt-3'},[
-              React.createElement('div',{className:'flex items-center justify-between text-sm text-slate-600'},[
-                React.createElement('span',null,'Taux appliqué'),
-                React.createElement('span',{className:'font-medium'}, `${(rate*100).toFixed(2)}%`)
-              ]),
-              React.createElement('input',{
-                type:'range',
-                min:'0', max:'5', step:'0.01',
-                value:(rate*100).toFixed(2),
-                onChange:(e)=>{ const v = Number(e.target.value); if(Number.isFinite(v)) { setRate(v/100); } },
-                className:'w-full mt-2'
-              }),
-              React.createElement('div',{className:'flex gap-2 mt-3 flex-wrap'},[1,1.5,2,2.5,3].map(p => 
-                React.createElement('button',{key:p, className:`btn ${Math.abs(rate - p/100) < 1e-6 ? 'bg-slate-900 text-white' : ''}`, onClick:()=>setRate(p/100)}, `${p}`.replace('.',',' ) + '%')
-              ))
-            ])
-          ]),
-          React.createElement(motion.div,{key:'right', initial:{opacity:0,y:8}, animate:{opacity:1,y:0}, transition:{delay:0.15, duration:0.5}, className:'md:col-span-2'},[
-            React.createElement('div',{className:'card p-5 md:p-6 border-sky-100'},[
-              React.createElement('h2',{className:'text-lg font-semibold text-slate-800'},'Comment ça marche ?'),
-              React.createElement('p',{className:'text-slate-600 mt-2'},
-                ['Le modèle « % unique » applique un ', React.createElement('strong',null,'taux uniforme'),' sur le loyer déclaré 2025 (HT). Le calcul est linéaire : ', 
-                 React.createElement('code',{className:'px-1.5 py-0.5 bg-slate-100 rounded'},'Contribution 2026 = Loyer 2025 × Taux'), '.']
-              ),
-              React.createElement('div',{className:'mt-4 p-4 rounded-xl bg-sky-50 border border-sky-100 text-sky-900 text-sm'},
-                [React.createElement('strong',null,'Exemple'), ' : pour un loyer de 12 000 € HT et un taux de 2 %, la contribution projetée est ', React.createElement('strong',null,'240 €'), '.']
-              ),
-              React.createElement('div',{className:'mt-4 text-sm text-slate-600'},'Le champ « département » sert à l’identification/statistique ; il n’influe pas le calcul.')
-            ])
+        React.createElement('h1',{key:'h',className:'text-3xl md:text-4xl font-semibold text-slate-800'},'Simulateur « Projet 2026 – % unique »'),
+        React.createElement('p',{key:'p',className:'mt-2 text-slate-600'},'Indiquez votre code département et votre loyer propriétaire 2025 (HT).'),
+        React.createElement('div',{key:'form',className:'mt-6 card p-6'},[
+          React.createElement('input',{key:'dept',placeholder:'Code département',value:dept,onChange:(e)=>setDept(e.target.value),className:'border rounded px-2 py-1 mr-2'}),
+          React.createElement('input',{key:'loyer',placeholder:'Loyer 2025 (HT)',value:loyerStr,onChange:(e)=>setLoyerStr(e.target.value),className:'border rounded px-2 py-1 mr-2'}),
+          valid && React.createElement('div',{key:'res',className:'mt-4'},[
+            React.createElement('div',{className:'text-lg font-semibold'}, fmt.format(Math.round(displayed))),
+            React.createElement('div',{className:'text-sm text-gray-600'}, `Calcul : ${fmtPrecise.format(loyer)} × ${(rate*100).toFixed(2)}%`)
           ])
-        ]),
-        React.createElement('footer',{className:'mt-10 text-xs text-slate-500'},'Prototype statique — prêt pour intégration (Vercel, Netlify, Canva via embed).')
+        ])
       ]);
     }
 
